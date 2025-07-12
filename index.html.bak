@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  
+  <title>ALL INDIA TRANSPORT</title>
+  <link rel="stylesheet" href="style.css"/>
+</head>
+<body>
+  <header>
+    <div class="container">
+        <img src="logo.jpg" alt="ALL INDIA TRANSPORT Logo" />
+      <h1>ALL INDIA TRANSPORT</h1>
+	  
+      <nav>
+        <ul>
+          <li><link rel="about us" href="about us.htlm">About</a></li>
+          <li><a href="#services">Services</a></li>
+          <li><a href="#contact">Contact</a></li>
+        </ul>
+      </nav>
+    </div>
+  </header>
+
+  <section class="hero">
+   
+  </section>
+
+  <section id="about" class="section">
+    <h2>About Us</h2>
+    <p>ALL INDIA TRANSPORT has been serving the nation with top-tier logistics and transport services for over a decade. Our fleet and dedicated staff ensure timely and secure deliveries.</p>
+  </section>
+
+  <section id="services" class="section">
+    <h2>Our Services</h2>
+    <ul>
+      <li>Full Truck Load (FTL) & Part Truck Load (PTL)</li>
+      <li>Express Delivery Services</li>
+      <li>Interstate Logistics</li>
+      <li>Warehouse & Inventory Management</li>
+    </ul>
+  </section>
+
+  <section id="contact" class="section">
+    <h2>Contact Us</h2>
+    <form id="contactForm">
+      <input type="text" placeholder="Your Name" required />
+      <input type="email" placeholder="Your Email" required />
+      <textarea placeholder="Your Message" required></textarea>
+      <button type="submit">Send Message</button>
+    </form>
+  </section>
+
+  <footer>
+    <p>&copy; 2025 ALL INDIA TRANSPORT. All rights reserved.</p>
+  </footer>
+
+  <script src="script.js"></script>
+</body>
+</html>
