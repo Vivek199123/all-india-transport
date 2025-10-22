@@ -1,0 +1,238 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Language Switcher Debug</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+        .debug-container {
+            max-width: 800px;
+            margin: 0 auto;
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        .test-section {
+            margin: 20px 0;
+            padding: 15px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+        }
+        .status {
+            padding: 10px;
+            margin: 10px 0;
+            border-radius: 5px;
+        }
+        .status.success {
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+        .status.error {
+            background: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+        .status.warning {
+            background: #fff3cd;
+            color: #856404;
+            border: 1px solid #ffeaa7;
+        }
+        button {
+            background: #007bff;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            margin: 5px;
+        }
+        button:hover {
+            background: #0056b3;
+        }
+        .console-output {
+            background: #f8f9fa;
+            border: 1px solid #dee2e6;
+            padding: 15px;
+            border-radius: 5px;
+            font-family: monospace;
+            white-space: pre-wrap;
+            max-height: 300px;
+            overflow-y: auto;
+        }
+    </style>
+</head>
+<body>
+    <div class="debug-container">
+        <h1>🌍 Language Switcher Debug Tool</h1>
+        
+        <div class="test-section">
+            <h2>📋 System Status</h2>
+            <div id="systemStatus"></div>
+        </div>
+        
+        <div class="test-section">
+            <h2>🔧 Manual Tests</h2>
+            <button onclick="testTranslations()">Test Translations Loading</button>
+            <button onclick="testLanguageSwitcher()">Test Language Switcher</button>
+            <button onclick="testLanguageSwitch()">Test Language Switch</button>
+            <button onclick="clearConsole()">Clear Console</button>
+        </div>
+        
+        <div class="test-section">
+            <h2>📝 Console Output</h2>
+            <div id="consoleOutput" class="console-output"></div>
+        </div>
+        
+        <div class="test-section">
+            <h2>🌐 Current Language</h2>
+            <div id="currentLanguage"></div>
+        </div>
+    </div>
+
+    <!-- Load scripts in correct order -->
+    <script src="translations.js"></script>
+    <script src="language-switcher.js"></script>
+    
+    <script>
+        // Override console.log to capture output
+        const originalLog = console.log;
+        const originalError = console.error;
+        const consoleOutput = document.getElementById('consoleOutput');
+        
+        function addToConsole(message, type = 'log') {
+            const timestamp = new Date().toLocaleTimeString();
+            const prefix = type === 'error' ? '❌ ERROR:' : 'ℹ️ INFO:';
+            consoleOutput.textContent += `[${timestamp}] ${prefix} ${message}\n`;
+            consoleOutput.scrollTop = consoleOutput.scrollHeight;
+        }
+        
+        console.log = function(...args) {
+            originalLog.apply(console, args);
+            addToConsole(args.join(' '));
+        };
+        
+        console.error = function(...args) {
+            originalError.apply(console, args);
+            addToConsole(args.join(' '), 'error');
+        };
+        
+        // Test functions
+        function testTranslations() {
+            console.log('Testing translations loading...');
+            
+            if (typeof window.translations !== 'undefined') {
+                console.log('✅ Translations loaded successfully');
+                console.log('Available languages:', Object.keys(window.translations));
+                
+                // Test each language
+                Object.keys(window.translations).forEach(lang => {
+                    const langData = window.translations[lang];
+                    console.log(`Language ${lang}: ${Object.keys(langData).length} translations`);
+                });
+            } else {
+                console.error('❌ Translations not loaded');
+            }
+        }
+        
+        function testLanguageSwitcher() {
+            console.log('Testing language switcher...');
+            
+            if (typeof window.languageSwitcher !== 'undefined') {
+                console.log('✅ Language switcher initialized');
+                console.log('Current language:', window.languageSwitcher.currentLanguage);
+                console.log('Supported languages:', window.languageSwitcher.supportedLanguages);
+            } else {
+                console.error('❌ Language switcher not initialized');
+            }
+        }
+        
+        function testLanguageSwitch() {
+            console.log('Testing language switch...');
+            
+            if (window.languageSwitcher) {
+                const currentLang = window.languageSwitcher.currentLanguage;
+                const nextLang = window.languageSwitcher.supportedLanguages[
+                    (window.languageSwitcher.supportedLanguages.indexOf(currentLang) + 1) % 
+                    window.languageSwitcher.supportedLanguages.length
+                ];
+                
+                console.log(`Switching from ${currentLang} to ${nextLang}`);
+                window.languageSwitcher.switchLanguage(nextLang);
+            } else {
+                console.error('❌ Language switcher not available');
+            }
+        }
+        
+        function clearConsole() {
+            consoleOutput.textContent = '';
+        }
+        
+        function updateSystemStatus() {
+            const statusDiv = document.getElementById('systemStatus');
+            let statusHTML = '';
+            
+            // Check translations
+            if (typeof window.translations !== 'undefined') {
+                statusHTML += '<div class="status success">✅ Translations loaded</div>';
+            } else {
+                statusHTML += '<div class="status error">❌ Translations not loaded</div>';
+            }
+            
+            // Check language switcher
+            if (typeof window.languageSwitcher !== 'undefined') {
+                statusHTML += '<div class="status success">✅ Language switcher initialized</div>';
+            } else {
+                statusHTML += '<div class="status error">❌ Language switcher not initialized</div>';
+            }
+            
+            // Check DOM elements
+            const languageSwitcherElement = document.querySelector('.language-switcher');
+            if (languageSwitcherElement) {
+                statusHTML += '<div class="status success">✅ Language switcher UI created</div>';
+            } else {
+                statusHTML += '<div class="status warning">⚠️ Language switcher UI not found</div>';
+            }
+            
+            statusDiv.innerHTML = statusHTML;
+        }
+        
+        function updateCurrentLanguage() {
+            const langDiv = document.getElementById('currentLanguage');
+            if (window.languageSwitcher) {
+                langDiv.innerHTML = `
+                    <div class="status success">
+                        Current Language: <strong>${window.languageSwitcher.currentLanguage}</strong>
+                        (${window.languageSwitcher.languageNames[window.languageSwitcher.currentLanguage]})
+                    </div>
+                `;
+            } else {
+                langDiv.innerHTML = '<div class="status error">Language switcher not available</div>';
+            }
+        }
+        
+        // Initialize debug tool
+        document.addEventListener('DOMContentLoaded', function() {
+            console.log('Debug tool initialized');
+            
+            // Wait for language switcher to initialize
+            setTimeout(() => {
+                updateSystemStatus();
+                updateCurrentLanguage();
+                
+                // Update status every 2 seconds
+                setInterval(() => {
+                    updateSystemStatus();
+                    updateCurrentLanguage();
+                }, 2000);
+            }, 500);
+        });
+    </script>
+</body>
+</html> 
