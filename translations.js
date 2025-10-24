@@ -1,100 +1,59 @@
-// All India Transport - Multi-Language Translations
-// Supported Languages: English, Hindi, Gujarati, Marathi
+// translations.js
+//
+// This is a placeholder file. You must add your translations here.
+// The "key" (e.g., 'nav_home') must match the 'data-translate' attribute in your HTML.
 
-const translations = {
-    en: {
-        // Navigation
-        home: "Home",
-        about: "About",
-        services: "Services",
-        quotes: "Quotes",
-        contact: "Contact",
-        
-        // Common
-        company_name: "All India Transport",
-        tagline: "Your Trusted Logistic Service Provider",
-        get_quote: "Get Free Quote",
-        
-        // Contact
-        get_in_touch: "Get In Touch",
-        quick_links: "Quick Links",
-        follow_us: "Follow Us",
-        
-        // Footer
-        address: "Hotel Sugam Compound, Golden Chokdi, Vadodara",
-        copyright: "© 2024 All India Transport. All rights reserved."
+var translations = {
+    'en': {
+        'page_title': 'All India Transport - Home',
+        'nav_home': 'Home',
+        'nav_about': 'About',
+        'nav_services': 'Services',
+        'nav_quotes': 'Quotes',
+        'nav_contact': 'Contact',
+        'hero_title_1': 'We move your goods',
+        'hero_title_2': 'Anywhere in India',
+        'hero_title_3': 'From Kashmir to Kanyakumari',
+        'hero_subtitle': 'Reliable, Fast & Secure Logistics Solutions',
+        'hero_button': 'Get Free Quote'
     },
-    hi: {
-        // Navigation
-        home: "होम",
-        about: "हमारे बारे में",
-        services: "सेवाएं",
-        quotes: "कोटेशन",
-        contact: "संपर्क",
-        
-        // Common
-        company_name: "ऑल इंडिया ट्रांसपोर्ट",
-        tagline: "आपका विश्वसनीय लॉजिस्टिक सेवा प्रदाता",
-        get_quote: "मुफ्त कोटेशन पाएं",
-        
-        // Contact
-        get_in_touch: "संपर्क करें",
-        quick_links: "त्वरित लिंक",
-        follow_us: "हमें फॉलो करें",
-        
-        // Footer
-        address: "होटल सुगम कंपाउंड, गोल्डन चौकड़ी, वडोदरा",
-        copyright: "© 2024 ऑल इंडिया ट्रांसपोर्ट। सभी अधिकार सुरक्षित।"
+    'hi': {
+        'page_title': 'ऑल इंडिया ट्रांसपोर्ट - होम',
+        'nav_home': 'होम',
+        'nav_about': 'हमारे बारे में',
+        'nav_services': 'सेवाएं',
+        'nav_quotes': 'कोट',
+        'nav_contact': 'संपर्क',
+        'hero_title_1': 'हम आपका सामान पहुंचाते हैं',
+        'hero_title_2': 'भारत में कहीं भी',
+        'hero_title_3': 'कश्मीर से कन्याकुमारी तक',
+        'hero_subtitle': 'विश्वसनीय, तेज़ और सुरक्षित लॉजिस्टिक्स समाधान',
+        'hero_button': 'मुफ्त कोट प्राप्त करें'
     },
-    gu: {
-        // Navigation
-        home: "હોમ",
-        about: "અમારા વિશે",
-        services: "સેવાઓ",
-        quotes: "કોટેશન",
-        contact: "સંપર્ક",
-        
-        // Common
-        company_name: "ઓલ ઇન્ડિયા ટ્રાન્સપોર્ટ",
-        tagline: "તમારા વિશ્વસनीय લોજિસ્ટિક સેવા પ્રદાતા",
-        get_quote: "મફત કોટેશન મેળવો",
-        
-        // Contact
-        get_in_touch: "સંપર્કમાં રહો",
-        quick_links: "ઝડપી લિંક્સ",
-        follow_us: "અમને ફોલો કરો",
-        
-        // Footer
-        address: "હોટેલ સુગમ કમ્પાઉન્ડ, ગોલ્ડન ચોકડી, વડોદરા",
-        copyright: "© 2024 ઓલ ઇન્ડિયા ટ્રાન્સપોર્ટ. બધા અધિકારો સુરક્ષિત."
+    'gu': {
+        'page_title': 'ઓલ ઇન્ડિયા ટ્રાન્સપોર્ટ - હોમ',
+        'nav_home': 'હોમ',
+        'nav_about': 'અમારા વિશે',
+        'nav_services': 'સેવાઓ',
+        'nav_quotes': 'ક્વોટ',
+        'nav_contact': 'સંપર્ક',
+        'hero_title_1': 'અમે તમારો સામાન ખસેડીએ છીએ',
+        'hero_title_2': 'ભારતમાં ગમે ત્યાં',
+        'hero_title_3': 'કાશ્મીરથી કન્યાકુમારી સુધી',
+        'hero_subtitle': 'વિશ્વસનીય, ઝડપી અને સુરક્ષિત લોજિસ્ટિક્સ સોલ્યુશન્સ',
+        'hero_button': 'મફત ક્વોટ મેળવો'
     },
-    mr: {
-        // Navigation
-        home: "होम",
-        about: "आमच्याबद्दल",
-        services: "सेवा",
-        quotes: "कोटेशन",
-        contact: "संपर्क",
-        
-        // Common
-        company_name: "ऑल इंडिया ट्रान्सपोर्ट",
-        tagline: "तुमचा विश्वसनीय लॉजिस्टिक सेवा प्रदाता",
-        get_quote: "मोफत कोटेशन मिळवा",
-        
-        // Contact
-        get_in_touch: "संपर्कात रहा",
-        quick_links: "द्रुत दुवे",
-        follow_us: "आम्हाला फॉलो करा",
-        
-        // Footer
-        address: "हॉटेल सुगम कंपाऊंड, गोल्डन चौकडी, वडोदरा",
-        copyright: "© 2024 ऑल इंडिया ट्रान्सपोर्ट. सर्व हक्क राखीव."
+    'mr': {
+        'page_title': 'ऑल इंडिया ट्रान्सपोर्ट - होम',
+        'nav_home': 'होम',
+        'nav_about': 'आमच्याबद्दल',
+        'nav_services': 'सेवा',
+        'nav_quotes': 'कोट',
+        'nav_contact': 'संपर्क',
+        'hero_title_1': 'आम्ही तुमचा माल हलवतो',
+        'hero_title_2': 'भारतात कुठेही',
+        'hero_title_3': 'काश्मीर ते कन्याकुमारी',
+        'hero_subtitle': 'विश्वसनीय, जलद आणि सुरक्षित लॉजिस्टिक सोल्यूशन्स',
+        'hero_button': 'मोफत कोट मिळवा'
     }
 };
-
-// Export translations for use in other files
-if (typeof module !== 'undefined' && module.exports) {
-    module.exports = translations;
-} else {
-    window.translations = translations;
-}
