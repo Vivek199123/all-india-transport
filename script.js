@@ -25,40 +25,6 @@ function animateCounter(element, target, duration = 2000) {
     updateCounter();
 }
 
-// Initialize all animations when page loads
-document.addEventListener('DOMContentLoaded', function() {
-    // Initialize scroll animations
-    initScrollAnimations();
-    
-    // Initialize parallax effect
-    initParallaxEffect();
-    
-    // Initialize hero animations
-    initHeroAnimations();
-    
-    // Initialize counters
-    initCounters();
-    
-    // Add smooth scrolling
-    addSmoothScrolling();
-    
-    // Initialize form handlers
-    initializeForms();
-    
-    // Add mobile menu functionality
-    addMobileMenu();
-    
-    // Initialize scroll to top
-    addScrollToTop();
-    
-    // Initialize field validation
-    addFieldValidation();
-
-    // Initialize service selection
-    handleServiceSelection();
-    prefillServiceSelection();
-});
-
 // Scroll Animation Functions
 function initScrollAnimations() {
     // Create Intersection Observer
@@ -136,15 +102,6 @@ function initParallaxEffect() {
 
 // Hero Animations
 function initHeroAnimations() {
-    // Typewriter effect for hero text (optional enhancement)
-    const heroTexts = document.querySelectorAll('.header-content h1');
-    
-    heroTexts.forEach((text, index) => {
-        setTimeout(() => {
-            text.style.animationPlayState = 'running';
-        }, index * 300);
-    });
-    
     // Add click handler for scroll indicator
     const scrollIndicator = document.querySelector('.scroll-indicator');
     if (scrollIndicator) {
@@ -155,6 +112,14 @@ function initHeroAnimations() {
             }
         });
     }
+
+    // Typewriter effect for hero text (optional enhancement)
+    const heroTexts = document.querySelectorAll('.header-content h1');
+    heroTexts.forEach((text, index) => {
+        setTimeout(() => {
+            text.style.animationPlayState = 'running';
+        }, index * 300);
+    });
 }
 
 // Enhanced smooth scrolling with offset for fixed navbar
@@ -176,6 +141,195 @@ function addSmoothScrolling() {
             }
         });
     });
+}
+
+// Form handling functions
+function initializeForms() {
+    // Quote form handler
+    const quoteForm = document.getElementById('quoteForm');
+    if (quoteForm) {
+        quoteForm.addEventListener('submit', handleQuoteForm);
+    }
+    
+    // Contact form handler
+    const contactForm = document.getElementById('contactForm');
+    if (contactForm) {
+        contactForm.addEventListener('submit', handleContactForm);
+    }
+}
+
+// Handle quote form submission
+function handleQuoteForm(e) {
+    e.preventDefault();
+    if (isSubmitting) return; // Prevent double submit
+
+    const form = document.getElementById('quoteForm');
+    const submitBtn = form ? (form.querySelector('button[type="submit"]') || document.getElementById('submitBtn')) : null;
+
+    const payload = {
+        name: (form.querySelector('input[name="name"]') || {}).value || '',
+        email: (form.querySelector('input[name="email"]') || {}).value || '',
+        phone: (form.querySelector('input[name="phone"]') || {}).value || '',
+        product_type: (form.querySelector('input[name="product_type"]') || {}).value || '',
+        description: (form.querySelector('textarea[name="description"]') || {}).value || '',
+        weight: (form.querySelector('input[name="weight"]') || {}).value || '',
+        pickup_location: (form.querySelector('input[name="pickup_location"]') || {}).value || '',
+        drop_location: (form.querySelector('input[name="drop_location"]') || {}).value || '',
+        service_type: (form.querySelector('select[name="service_type"]') || {}).value || ''
+    };
+
+    // Validate form
+    if (!validateQuoteForm(payload)) {
+        return; // Validation failed
+    }
+
+    // Check for recent submissions
+    if (checkRecentSubmission('quote', payload.email, payload.phone)) {
+        showNotification('duplicate', 'warning');
+        return;
+    }
+
+    // Set submitting flag
+    isSubmitting = true;
+    if (submitBtn) {
+        submitBtn.disabled = true;
+        submitBtn.textContent = 'Sending...';
+    }
+
+    // Send to Google Sheets
+    sendToGoogleSheets(payload, 'quote', form, submitBtn, 'Get A Quote');
+}
+
+// Handle contact form submission
+function handleContactForm(event) {
+    event.preventDefault();
+    if (isSubmitting) return; // Prevent double submit
+
+    const form = event.target;
+    const submitBtn = form.querySelector('button[type="submit"]');
+    
+    const formData = new FormData(form);
+    const formObject = {};
+    formData.forEach((value, key) => formObject[key] = value);
+    
+    // Validate form
+    if (!validateContactForm(formObject)) {
+        return; // Validation failed
+    }
+
+    // Check for recent submissions
+    if (checkRecentSubmission('contact', formObject.email, formObject.phone)) {
+        showNotification('duplicate', 'warning');
+        return;
+    }
+    
+    // Set submitting flag
+    isSubmitting = true;
+    if (submitBtn) {
+        submitBtn.disabled = true;
+        submitBtn.textContent = 'Sending...';
+    }
+    
+    // Send to Google Sheets
+    sendToGoogleSheets(formObject, 'contact', form, submitBtn, 'Send Message');
+}
+
+// Validate quote form data
+function validateQuoteForm(data) {
+    // Updated keys to match payload
+    const requiredFields = ['name', 'phone', 'email', 'product_type', 'description', 'weight', 'pickup_location', 'drop_location', 'service_type'];
+    
+    for (let field of requiredFields) {
+        if (!data[field] || data[field].trim() === '') {
+            showNotification(`Please fill in the ${field.replace(/_/g, ' ')} field.`, 'error');
+            return false;
+        }
+    }
+    
+    // Validate email format
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(data.email)) {
+        showNotification('Please enter a valid email address.', 'error');
+        return false;
+    }
+    
+    // Validate phone number (basic validation for 10 digits)
+    const phoneRegex = /^\d{10}$/;
+    if (!phoneRegex.test(data.phone.replace(/\D/g, ''))) {
+        showNotification('Please enter a valid 10-digit phone number.', 'error');
+        return false;
+    }
+    
+    // Validate weight
+    const weight = parseFloat(data.weight);
+    if (isNaN(weight) || weight <= 0) {
+        showNotification('Please enter a valid weight greater than 0.', 'error');
+        return false;
+    }
+    
+    return true;
+}
+
+// Validate contact form data
+function validateContactForm(data) {
+    const requiredFields = ['name', 'email', 'phone', 'subject', 'message'];
+    
+    for (let field of requiredFields) {
+        if (!data[field] || data[field].trim() === '') {
+            showNotification(`Please fill in the ${field.replace(/_/g, ' ')} field.`, 'error');
+            return false;
+        }
+    }
+    
+    // Validate email format
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(data.email)) {
+        showNotification('Please enter a valid email address.', 'error');
+        return false;
+    }
+    
+    // Validate phone number (basic validation for 10 digits)
+    const phoneRegex = /^\d{10}$/;
+    if (!phoneRegex.test(data.phone.replace(/\D/g, ''))) {
+        showNotification('Please enter a valid 10-digit phone number.', 'error');
+        return false;
+    }
+    
+    return true;
+}
+
+// Show notification messages
+function showNotification(message, type = 'info') {
+    // Use translated messages if available
+    const messages = {
+        'submitting': 'Submitting form, please wait...',
+        'quoteSuccess': 'Quote request submitted! We will contact you soon.',
+        'contactSuccess': 'Message sent! We will get back to you soon.',
+        'duplicate': 'You just submitted this form. Please wait a few minutes.',
+        'error': 'An error occurred. Please try again later.'
+    };
+    message = messages[message] || message;
+
+    // Remove existing notifications
+    document.querySelectorAll('.notification').forEach(n => n.remove());
+    
+    // Create notification element
+    const notification = document.createElement('div');
+    notification.className = `notification notification-${type}`;
+    notification.innerHTML = `
+        <div class="notification-content">
+            <span class="notification-message">${message}</span>
+            <button class="notification-close" onclick="this.parentElement.parentElement.remove()">&times;</button>
+        </div>
+    `;
+    
+    // Add to page
+    document.body.appendChild(notification);
+    
+    // Auto remove after 5 seconds
+    setTimeout(() => {
+        notification.remove();
+    }, 5000);
 }
 
 // Add mobile menu functionality
@@ -225,254 +379,14 @@ function addMobileMenu() {
             navbar.classList.toggle('mobile-open');
         });
         
-        // Insert button before navbar (assuming navbar is wrapped in a container or body)
-        // If the navbar is the first child of a container, this needs adjustment, 
-        // but for general use, we'll append it to a reachable parent.
-        const header = document.querySelector('header');
-        if (header) {
-            header.insertBefore(mobileMenuBtn, navbar);
-        }
+        // Insert button before navbar
+        navbar.parentElement.insertBefore(mobileMenuBtn, navbar);
     }
 }
-
-// Form handling functions
-function initializeForms() {
-    // Quote form handler
-    const quoteForm = document.getElementById('quoteForm');
-    if (quoteForm) {
-        quoteForm.addEventListener('submit', handleQuoteForm);
-    }
-    
-    // Contact form handler
-    const contactForm = document.getElementById('contactForm');
-    if (contactForm) {
-        contactForm.addEventListener('submit', handleContactForm);
-    }
-}
-
-// Handle quote form submission (CLEANED UP)
-function handleQuoteForm(event) {
-    event.preventDefault();
-    
-    // Collect form data
-    const formData = new FormData(event.target);
-    const formObject = {};
-    for (let [key, value] of formData.entries()) {
-        formObject[key] = value;
-    }
-    
-    // Check if Commercial Insurance is selected
-    if (formObject.service === 'Commercial Insurance') {
-        window.location.href = 'https://reach.turtlemint.com/leadforms?partnerId=6840a22f40315a2f211758ab&formId=cad01134-8a7e-4b7c-aaec-1cfc344b600e&language=English';
-        return;
-    }
-    
-    // Prevent double submission globally
-    if (isSubmitting) {
-        console.log('Form submission already in progress');
-        return;
-    }
-    
-    // Check for recent submissions
-    if (checkRecentSubmission('quote', formObject.email, formObject.phone)) {
-        showNotification('duplicate', 'warning');
-        return;
-    }
-    
-    // Validate form data
-    if (validateQuoteForm(formObject)) {
-        // Hand off control to sendToGoogleSheets, passing the form element
-        sendToGoogleSheets(formObject, 'quote', event.target);
-    }
-}
-
-// Handle contact form submission (CLEANED UP)
-function handleContactForm(event) {
-    event.preventDefault();
-    
-    // Prevent double submission globally
-    if (isSubmitting) {
-        console.log('Form submission already in progress');
-        return;
-    }
-    
-    // Collect form data
-    const formData = new FormData(event.target);
-    const formObject = {};
-    for (let [key, value] of formData.entries()) {
-        formObject[key] = value;
-    }
-    
-    // Check for recent submissions
-    if (checkRecentSubmission('contact', formObject.email, formObject.phone)) {
-        showNotification('duplicate', 'warning');
-        return;
-    }
-    
-    // Validate form data
-    if (validateContactForm(formObject)) {
-        // Hand off control to sendToGoogleSheets, passing the form element
-        sendToGoogleSheets(formObject, 'contact', event.target);
-    }
-}
-
-// Validate quote form data
-function validateQuoteForm(data) {
-    const requiredFields = ['name', 'phone', 'email', 'productType', 'description', 'weight', 'pickupLocation', 'dropLocation', 'service'];
-    
-    for (let field of requiredFields) {
-        if (!data[field] || data[field].trim() === '') {
-            showNotification(`Please fill in the ${field.replace(/([A-Z])/g, ' $1').toLowerCase()} field.`, 'error');
-            return false;
-        }
-    }
-    
-    // Validate email format
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (!emailRegex.test(data.email)) {
-        showNotification('Please enter a valid email address.', 'error');
-        return false;
-    }
-    
-    // Validate phone number (basic validation for Indian numbers)
-    const phoneRegex = /^[6-9]\d{9}$/;
-    if (!phoneRegex.test(data.phone.replace(/\D/g, ''))) {
-        showNotification('Please enter a valid 10-digit phone number.', 'error');
-        return false;
-    }
-    
-    // Validate weight
-    const weight = parseFloat(data.weight);
-    if (isNaN(weight) || weight <= 0) {
-        showNotification('Please enter a valid weight greater than 0.', 'error');
-        return false;
-    }
-    
-    return true;
-}
-
-// Validate contact form data
-function validateContactForm(data) {
-    const requiredFields = ['name', 'email', 'phone', 'subject', 'message'];
-    
-    for (let field of requiredFields) {
-        if (!data[field] || data[field].trim() === '') {
-            showNotification(`Please fill in the ${field.replace(/([A-Z])/g, ' $1').toLowerCase()} field.`, 'error');
-            return false;
-        }
-    }
-    
-    // Validate email format
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (!emailRegex.test(data.email)) {
-        showNotification('Please enter a valid email address.', 'error');
-        return false;
-    }
-    
-    // Validate phone number
-    const phoneRegex = /^[6-9]\d{9}$/;
-    if (!phoneRegex.test(data.phone.replace(/\D/g, ''))) {
-        showNotification('Please enter a valid 10-digit phone number.', 'error');
-        return false;
-    }
-    
-    return true;
-}
-
-// Show notification messages
-function showNotification(message, type = 'info') {
-    // Use translated messages if available
-    if (window.translationMessages && window.translationMessages[message]) {
-        message = window.translationMessages[message];
-    }
-    
-    // Default messages for form submission status
-    let displayMessage = message;
-    if (message === 'submitting') displayMessage = 'Submitting your request...';
-    if (message === 'quoteSuccess') displayMessage = 'Quote request submitted successfully! We will contact you soon.';
-    if (message === 'contactSuccess') displayMessage = 'Message sent successfully! We will get back to you soon.';
-    if (message === 'error') displayMessage = 'Submission failed due to a network error. Please try again.';
-    if (message === 'duplicate') displayMessage = 'You recently submitted this form. Please wait a few minutes before trying again.';
-
-
-    // Remove existing notifications
-    const existingNotifications = document.querySelectorAll('.notification');
-    existingNotifications.forEach(notification => notification.remove());
-    
-    // Create notification element
-    const notification = document.createElement('div');
-    notification.className = `notification notification-${type}`;
-    notification.innerHTML = `
-        <div class="notification-content">
-            <span class="notification-message">${displayMessage}</span>
-            <button class="notification-close" onclick="this.parentElement.parentElement.remove()">&times;</button>
-        </div>
-    `;
-    
-    // Add styles
-    notification.style.cssText = `
-        position: fixed;
-        top: 20px;
-        right: 20px;
-        background: ${type === 'success' ? '#4CAF50' : type === 'error' ? '#f44336' : '#2196F3'};
-        color: white;
-        padding: 15px 20px;
-        border-radius: 5px;
-        box-shadow: 0 4px 12px rgba(0,0,0,0.15);
-        z-index: 10000;
-        max-width: 400px;
-        animation: slideIn 0.3s ease-out;
-    `;
-    
-    // Add to page
-    document.body.appendChild(notification);
-    
-    // Auto remove after 5 seconds
-    setTimeout(() => {
-        if (notification.parentElement) {
-            notification.remove();
-        }
-    }, 5000);
-}
-
-// Add CSS animations (for notification)
-const animationStyles = document.createElement('style');
-animationStyles.textContent = `
-    @keyframes slideIn {
-        from {
-            transform: translateX(100%);
-            opacity: 0;
-        }
-        to {
-            transform: translateX(0);
-            opacity: 1;
-        }
-    }
-    
-    .notification-content {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-    }
-    
-    .notification-close {
-        background: none;
-        border: none;
-        color: white;
-        font-size: 20px;
-        cursor: pointer;
-        margin-left: 10px;
-    }
-    
-    .notification-close:hover {
-        opacity: 0.8;
-    }
-`;
-document.head.appendChild(animationStyles);
 
 // Service selector functionality
 function handleServiceSelection() {
-    const serviceSelect = document.getElementById('services');
+    const serviceSelect = document.getElementById('services'); // Assuming an ID on a select element
     if (serviceSelect) {
         serviceSelect.addEventListener('change', function() {
             const selectedValue = this.value;
@@ -486,14 +400,15 @@ function handleServiceSelection() {
 
 // Pre-fill service selection on quote page
 function prefillServiceSelection() {
-    const serviceSelect = document.querySelector('select[name="service"]');
+    // Corrected selector to match the one in Quote.html
+    const serviceSelect = document.querySelector('select[name="service_type"]'); 
     const storedService = localStorage.getItem('selectedService');
     
     if (serviceSelect && storedService) {
-        // Find the option with matching text
+        // Find the option with matching text or value
         const options = serviceSelect.options;
         for (let i = 0; i < options.length; i++) {
-            if (options[i].text === storedService) {
+            if (options[i].text === storedService || options[i].value === storedService) {
                 serviceSelect.selectedIndex = i;
                 break;
             }
@@ -503,53 +418,62 @@ function prefillServiceSelection() {
     }
 }
 
-// Add scroll to top functionality
-function addScrollToTop() {
-    // Create scroll to top button
-    const scrollBtn = document.createElement('div');
-    scrollBtn.className = 'back-to-top';
-    scrollBtn.innerHTML = '↑';
-    scrollBtn.style.cssText = `
-        position: fixed;
-        bottom: 30px;
-        right: 30px;
-        background: #2196F3;
-        color: white;
-        padding: 10px 15px;
-        border-radius: 50%;
-        cursor: pointer;
-        font-size: 18px;
-        display: flex; /* Change to flex for better centering */
-        align-items: center;
-        justify-content: center;
-        box-shadow: 0 4px 8px rgba(0,0,0,0.2);
-        z-index: 10000;
-        transition: opacity 0.3s ease, visibility 0.3s ease;
-        opacity: 0;
-        visibility: hidden;
-    `;
-    
-    document.body.appendChild(scrollBtn);
-    
-    // Show/hide scroll button
-    window.addEventListener('scroll', function() {
-        if (window.pageYOffset > 300) {
-            scrollBtn.style.opacity = '1';
-            scrollBtn.style.visibility = 'visible';
+// Add loading animation for forms
+function addLoadingState(form, isLoading) {
+    const submitBtn = form.querySelector('button[type="submit"]');
+    if (submitBtn) {
+        if (isLoading) {
+            submitBtn.disabled = true;
+            submitBtn.textContent = 'Submitting...';
+            submitBtn.style.opacity = '0.7';
         } else {
-            scrollBtn.style.opacity = '0';
-            scrollBtn.style.visibility = 'hidden';
+            submitBtn.disabled = false;
+            submitBtn.textContent = submitBtn.getAttribute('data-original-text') || 'Submit';
+            submitBtn.style.opacity = '1';
         }
-    });
-    
-    // Scroll to top on click
-    scrollBtn.addEventListener('click', function() {
-        window.scrollTo({
-            top: 0,
-            behavior: 'smooth'
-        });
-    });
+    }
 }
+
+// Add CSS animations
+const animationStyles = document.createElement('style');
+animationStyles.textContent = `
+    @keyframes slideIn {
+        from { transform: translateX(100%); opacity: 0; }
+        to { transform: translateX(0); opacity: 1; }
+    }
+    .notification {
+        position: fixed;
+        top: 20px;
+        right: 20px;
+        color: white;
+        padding: 15px 20px;
+        border-radius: 5px;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+        z-index: 10000;
+        max-width: 400px;
+        animation: slideIn 0.3s ease-out;
+    }
+    .notification-success { background: #4CAF50; }
+    .notification-error { background: #f44336; }
+    .notification-warning { background: #ff9800; }
+    .notification-info { background: #2196F3; }
+    .notification-content {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+    .notification-close {
+        background: none;
+        border: none;
+        color: white;
+        font-size: 20px;
+        cursor: pointer;
+        margin-left: 10px;
+    }
+    .notification-close:hover { opacity: 0.8; }
+`;
+document.head.appendChild(animationStyles);
+
 
 // Add form field validation on blur
 function addFieldValidation() {
@@ -593,7 +517,7 @@ function validateField(field) {
     
     // Phone validation
     if (name === 'phone' && value) {
-        const phoneRegex = /^[6-9]\d{9}$/;
+        const phoneRegex = /^\d{10}$/;
         if (!phoneRegex.test(value.replace(/\D/g, ''))) {
             field.classList.add('error');
             return false;
@@ -648,130 +572,93 @@ function checkRecentSubmission(formType, email, phone) {
     return false; // No recent submission found
 }
 
-// Google Sheets Integration (UPDATED for button management and CORS fix)
-function sendToGoogleSheets(data, formType, formElement) {
+// Google Sheets Integration
+function sendToGoogleSheets(data, formType, formElement, submitButton, buttonText) {
     // Replace this URL with your Google Apps Script web app URL
     const GOOGLE_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbxyNvi0k0OtkTJeW38WXCGufiuyHUYdj4FqQzpa5ZlsIuJNz19P4Gvf69-OZ9OuH8Bx/exec';
     
-    // Set global submission flag
-    isSubmitting = true;
-    
-    // Find the submit button and determine original text
-    const submitBtn = formElement.querySelector('.submit-btn');
-    const originalBtnText = formType === 'quote' ? 'Get A Quote' : 'Send Message';
-    
-    // Add form type and timestamp to data
     data.formType = formType;
-    data.submissionTimestamp = Date.now();
+    data.submissionTimestamp = new Date().toISOString();
     
-    // Store submission attempt in localStorage to prevent duplicates
-    const submissionKey = `${formType}_${data.email}_${data.phone}_${data.submissionTimestamp}`;
-    localStorage.setItem(submissionKey, 'submitted');
-
-    // Show loading state and disable button immediately
     showNotification('submitting', 'info');
-    if (submitBtn) {
-        submitBtn.disabled = true;
-        submitBtn.textContent = formType === 'quote' ? 'Submitting...' : 'Sending...';
-        submitBtn.style.opacity = '0.7';
-    }
-
+    
+    // Store submission attempt in localStorage
+    const submissionKey = `${formType}_${data.email}_${data.phone}_${Date.now()}`;
+    localStorage.setItem(submissionKey, 'submitted');
+    
     fetch(GOOGLE_SCRIPT_URL, {
         method: 'POST',
-        mode: 'no-cors', // CRITICAL: This bypasses the CORS header check
+        mode: 'no-cors', // Correct mode for cross-origin Google Script
         headers: {
             'Content-Type': 'application/json',
         },
         body: JSON.stringify(data)
     })
     .then(() => {
-        // Since we use no-cors, we assume success here.
+        // Since we're using no-cors, we can't read the response
+        // Assume success if no error is thrown
         showNotification(
-            formType === 'quote' 
-                ? 'quoteSuccess' 
-                : 'contactSuccess',
+            formType === 'quote' ? 'quoteSuccess' : 'contactSuccess',
             'success'
         );
-        
-        // Reset form and global flag
-        formElement.reset();
-        isSubmitting = false;
-        
-        // Re-enable submit button
-        if (submitBtn) {
-            submitBtn.disabled = false;
-            submitBtn.textContent = originalBtnText;
-            submitBtn.style.opacity = '1';
-        }
-        
-        // Clean up localStorage
-        setTimeout(() => {
-            localStorage.removeItem(submissionKey);
-        }, 60000);
+        if (formElement) formElement.reset();
     })
     .catch(error => {
-        // This only catches true network errors (e.g., disconnected)
-        console.error('Network error during submission:', error);
+        console.error('Error submitting form:', error);
         showNotification('error', 'error');
-        
-        // Re-enable submit button and global flag on error
-        isSubmitting = false;
-        if (submitBtn) {
-            submitBtn.disabled = false;
-            submitBtn.textContent = originalBtnText;
-            submitBtn.style.opacity = '1';
-        }
-        
-        // Clean up localStorage
+        // Clean up localStorage on error
         localStorage.removeItem(submissionKey);
+    })
+    .finally(() => {
+        // Re-enable button and reset text
+        if (submitButton) {
+            submitButton.disabled = false;
+            submitButton.textContent = buttonText;
+        }
+        isSubmitting = false;
+        
+        // Clean up localStorage after 5 minutes
+        setTimeout(() => {
+            localStorage.removeItem(submissionKey);
+        }, 300000); // 5 minutes
     });
 }
 
-// Alternative method using Google Forms (kept for reference, not used for live submissions)
-function sendToGoogleForms(data, formType) {
-    // Google Forms URLs (you'll need to create these forms)
-    const GOOGLE_FORMS = {
-        quote: 'YOUR_QUOTE_FORM_URL_HERE',
-        contact: 'YOUR_CONTACT_FORM_URL_HERE'
-    };
-    
-    const formUrl = GOOGLE_FORMS[formType];
-    if (!formUrl) {
-        showNotification('Form configuration error. Please contact support.', 'error');
-        return;
+// Back to top functionality
+window.addEventListener('scroll', function() {
+    const backToTop = document.querySelector('.back-to-top');
+    if (backToTop) { // Check if the button exists
+        if (window.pageYOffset > 300) {
+            // Use opacity and visibility for smoother show/hide
+            backToTop.style.opacity = '1';
+            backToTop.style.visibility = 'visible';
+        } else {
+            backToTop.style.opacity = '0';
+            backToTop.style.visibility = 'hidden';
+        }
     }
-    
-    // Create a hidden form to submit to Google Forms
-    const hiddenForm = document.createElement('form');
-    hiddenForm.method = 'POST';
-    hiddenForm.action = formUrl;
-    hiddenForm.target = '_blank';
-    hiddenForm.style.display = 'none';
-    
-    // Add form fields
-    Object.keys(data).forEach(key => {
-        const input = document.createElement('input');
-        input.type = 'hidden';
-        input.name = key;
-        input.value = data[key];
-        hiddenForm.appendChild(input);
+});
+
+function scrollToTop() {
+    window.scrollTo({
+        top: 0,
+        behavior: 'smooth'
     });
-    
-    // Submit the form
-    document.body.appendChild(hiddenForm);
-    hiddenForm.submit();
-    document.body.removeChild(hiddenForm);
-    
-    showNotification(
-        formType === 'quote' 
-            ? 'Quote request submitted successfully! We will contact you soon.' 
-            : 'Message sent successfully! We will get back to you soon.',
-        'success'
-    );
-    
-    // Reset original form
-    const form = document.querySelector(formType === 'quote' ? '#quoteForm' : '#contactForm');
-    if (form) {
-        form.reset();
-    }
 }
+
+// === MAIN INITIALIZATION ===
+// This single listener replaces all the duplicate ones.
+document.addEventListener('DOMContentLoaded', function() {
+    initScrollAnimations();
+    initParallaxEffect();
+    initHeroAnimations();
+    initCounters();
+    addSmoothScrolling();
+    initializeForms();
+    addMobileMenu();
+    handleServiceSelection();
+    prefillServiceSelection();
+    addFieldValidation();
+
+    console.log('All India Transport JavaScript loaded successfully!');
+});
