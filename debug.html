@@ -96,7 +96,6 @@
         </div>
     </div>
 
-    <!-- Load scripts in correct order -->
     <script src="translations.js"></script>
     <script src="language-switcher.js"></script>
     
@@ -123,6 +122,8 @@
             addToConsole(args.join(' '), 'error');
         };
         
+        let switcherInstance = null;
+
         // Test functions
         function testTranslations() {
             console.log('Testing translations loading...');
@@ -144,10 +145,9 @@
         function testLanguageSwitcher() {
             console.log('Testing language switcher...');
             
-            if (typeof window.languageSwitcher !== 'undefined') {
+            if (switcherInstance) {
                 console.log('✅ Language switcher initialized');
-                console.log('Current language:', window.languageSwitcher.currentLanguage);
-                console.log('Supported languages:', window.languageSwitcher.supportedLanguages);
+                console.log('Current language:', switcherInstance.currentLanguage);
             } else {
                 console.error('❌ Language switcher not initialized');
             }
@@ -156,15 +156,16 @@
         function testLanguageSwitch() {
             console.log('Testing language switch...');
             
-            if (window.languageSwitcher) {
-                const currentLang = window.languageSwitcher.currentLanguage;
-                const nextLang = window.languageSwitcher.supportedLanguages[
-                    (window.languageSwitcher.supportedLanguages.indexOf(currentLang) + 1) % 
-                    window.languageSwitcher.supportedLanguages.length
+            if (switcherInstance) {
+                const supported = ['en', 'hi', 'gu', 'mr'];
+                const currentLang = switcherInstance.currentLanguage;
+                const nextLang = supported[
+                    (supported.indexOf(currentLang) + 1) % supported.length
                 ];
                 
                 console.log(`Switching from ${currentLang} to ${nextLang}`);
-                window.languageSwitcher.switchLanguage(nextLang);
+                switcherInstance.changeLanguage(nextLang);
+                updateCurrentLanguage();
             } else {
                 console.error('❌ Language switcher not available');
             }
@@ -182,11 +183,11 @@
             if (typeof window.translations !== 'undefined') {
                 statusHTML += '<div class="status success">✅ Translations loaded</div>';
             } else {
-                statusHTML += '<div class="status error">❌ Translations not loaded</div>';
+                statusHTML += '<div class="status error">❌ Translations not loaded (translations.js missing or empty)</div>';
             }
             
             // Check language switcher
-            if (typeof window.languageSwitcher !== 'undefined') {
+            if (switcherInstance) {
                 statusHTML += '<div class="status success">✅ Language switcher initialized</div>';
             } else {
                 statusHTML += '<div class="status error">❌ Language switcher not initialized</div>';
@@ -197,7 +198,7 @@
             if (languageSwitcherElement) {
                 statusHTML += '<div class="status success">✅ Language switcher UI created</div>';
             } else {
-                statusHTML += '<div class="status warning">⚠️ Language switcher UI not found</div>';
+                statusHTML += '<div class="status warning">⚠️ Language switcher UI not found (Is .toppart in the DOM?)</div>';
             }
             
             statusDiv.innerHTML = statusHTML;
@@ -205,11 +206,11 @@
         
         function updateCurrentLanguage() {
             const langDiv = document.getElementById('currentLanguage');
-            if (window.languageSwitcher) {
+            if (switcherInstance) {
                 langDiv.innerHTML = `
                     <div class="status success">
-                        Current Language: <strong>${window.languageSwitcher.currentLanguage}</strong>
-                        (${window.languageSwitcher.languageNames[window.languageSwitcher.currentLanguage]})
+                        Current Language: <strong>${switcherInstance.currentLanguage}</strong>
+                        (${switcherInstance.getLanguageDisplay(switcherInstance.currentLanguage)})
                     </div>
                 `;
             } else {
@@ -221,18 +222,24 @@
         document.addEventListener('DOMContentLoaded', function() {
             console.log('Debug tool initialized');
             
-            // Wait for language switcher to initialize
-            setTimeout(() => {
+            // Manually create an instance for debugging, as the original script might have already run
+            if (typeof LanguageSwitcher !== 'undefined') {
+                switcherInstance = new LanguageSwitcher();
+            } else {
+                console.error('LanguageSwitcher class not found');
+            }
+
+            updateSystemStatus();
+            updateCurrentLanguage();
+            
+            // Update status
+            setInterval(() => {
                 updateSystemStatus();
-                updateCurrentLanguage();
-                
-                // Update status every 2 seconds
-                setInterval(() => {
-                    updateSystemStatus();
-                    updateCurrentLanguage();
-                }, 2000);
-            }, 500);
+                if(switcherInstance) {
+                     updateCurrentLanguage();
+                }
+            }, 2000);
         });
     </script>
 </body>
-</html> 
+</html>
