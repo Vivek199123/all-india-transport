@@ -18,7 +18,8 @@ function animateCounter(element, target, duration = 2000) {
             element.textContent = Math.floor(start);
             requestAnimationFrame(updateCounter);
         } else {
-            element.textContent = target + '+';
+            // Ensure the final number is the target + '+'
+            element.textContent = target + '+'; 
         }
     }
     
@@ -34,16 +35,8 @@ function initScrollAnimations() {
                 // Add animate class when element comes into view
                 entry.target.classList.add('animate');
                 
-                // If it's a counter, start the animation
-                if (entry.target.classList.contains('counter') || entry.target.querySelector('.counter')) {
-                    const counter = entry.target.classList.contains('counter') 
-                        ? entry.target 
-                        : entry.target.querySelector('.counter');
-                    if (counter && !counter.dataset.animated) {
-                        const target = parseInt(counter.getAttribute('data-target'));
-                        animateCounter(counter, target);
-                    }
-                }
+                // NOTE: The counter animation logic has been removed from here
+                // and moved to the dedicated initCounters() function below.
             }
         });
     }, {
@@ -70,13 +63,41 @@ function initScrollAnimations() {
     }, 100);
 }
 
-// Initialize all counters
+// UPDATED: Initialize all counters with Intersection Observer 🚀
 function initCounters() {
     const counters = document.querySelectorAll('.counter');
+    
+    if (counters.length === 0) {
+        console.warn("No elements with class '.counter' found for counter animation.");
+        return;
+    }
+
+    // Reset initial state and observe
     counters.forEach(counter => {
-        // Reset counter
         counter.textContent = '0';
         counter.dataset.animated = 'false';
+    });
+    
+    const counterObserver = new IntersectionObserver((entries, observer) => {
+        entries.forEach(entry => {
+            if (entry.isIntersecting) {
+                const counter = entry.target;
+                const target = parseInt(counter.getAttribute('data-target'));
+                
+                if (!isNaN(target) && counter.dataset.animated === 'false') {
+                    // Start the animation
+                    animateCounter(counter, target);
+                    // Stop observing once animated
+                    observer.unobserve(counter);
+                }
+            }
+        });
+    }, {
+        threshold: 0.5 // Trigger when 50% of the element is visible
+    });
+
+    counters.forEach(counter => {
+        counterObserver.observe(counter);
     });
 }
 
@@ -89,9 +110,12 @@ function initParallaxEffect() {
         window.addEventListener('scroll', () => {
             const scrolled = window.pageYOffset;
             const rate = scrolled * -0.5;
+            const rate2 = scrolled * -0.3; // Added rate2 for potential use
             
+            // Parallax background
             parallaxBg.style.transform = `translate3d(0, ${rate}px, 0)`;
             
+            // Floating elements parallax
             floatingElements.forEach((element, index) => {
                 const speed = 0.2 + (index * 0.1);
                 element.style.transform = `translateY(${scrolled * speed}px) rotate(${scrolled * 0.02}deg)`;
@@ -102,6 +126,15 @@ function initParallaxEffect() {
 
 // Hero Animations
 function initHeroAnimations() {
+    // Typewriter effect for hero text (optional enhancement)
+    const heroTexts = document.querySelectorAll('.header-content h1');
+    
+    heroTexts.forEach((text, index) => {
+        setTimeout(() => {
+            text.style.animationPlayState = 'running';
+        }, index * 300);
+    });
+    
     // Add click handler for scroll indicator
     const scrollIndicator = document.querySelector('.scroll-indicator');
     if (scrollIndicator) {
@@ -112,14 +145,6 @@ function initHeroAnimations() {
             }
         });
     }
-
-    // Typewriter effect for hero text (optional enhancement)
-    const heroTexts = document.querySelectorAll('.header-content h1');
-    heroTexts.forEach((text, index) => {
-        setTimeout(() => {
-            text.style.animationPlayState = 'running';
-        }, index * 300);
-    });
 }
 
 // Enhanced smooth scrolling with offset for fixed navbar
@@ -161,10 +186,9 @@ function initializeForms() {
 // Handle quote form submission
 function handleQuoteForm(e) {
     e.preventDefault();
-    if (isSubmitting) return; // Prevent double submit
-
     const form = document.getElementById('quoteForm');
     const submitBtn = form ? (form.querySelector('button[type="submit"]') || document.getElementById('submitBtn')) : null;
+    if (submitBtn) submitBtn.disabled = true;
 
     const payload = {
         name: (form.querySelector('input[name="name"]') || {}).value || '',
@@ -178,70 +202,90 @@ function handleQuoteForm(e) {
         service_type: (form.querySelector('select[name="service_type"]') || {}).value || ''
     };
 
-    // Validate form
-    if (!validateQuoteForm(payload)) {
-        return; // Validation failed
-    }
+    const WEB_APP_URL = 'https://script.google.com/macros/s/AKfycbxyNvi0k0OtkTJeW38WXCGufiuyHUYdj4FqQzpa5ZlsIuJNz19P4Gvf69-OZ9OuH8Bx/exec'; // <-- replace with your Web App URL
 
-    // Check for recent submissions
-    if (checkRecentSubmission('quote', payload.email, payload.phone)) {
-        showNotification('duplicate', 'warning');
-        return;
-    }
-
-    // Set submitting flag
-    isSubmitting = true;
-    if (submitBtn) {
-        submitBtn.disabled = true;
-        submitBtn.textContent = 'Sending...';
-    }
-
-    // Send to Google Sheets
-    sendToGoogleSheets(payload, 'quote', form, submitBtn, 'Get A Quote');
+    fetch(WEB_APP_URL, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
+    })
+    .then(res => res.json())
+    .then(data => {
+        if (data && data.status === 'success') {
+            alert('Quote submitted — thank you!');
+            form.reset();
+        } else {
+            console.error('Sheet error:', data);
+            alert('Submission failed. Check console for details.');
+        }
+    })
+    .catch(err => {
+        console.error('Network error:', err);
+        alert('Network error. See console.');
+    })
+    .finally(() => {
+        if (submitBtn) submitBtn.disabled = false;
+    });
 }
 
 // Handle contact form submission
-function handleContactForm(event) {
-    event.preventDefault();
-    if (isSubmitting) return; // Prevent double submit
-
-    const form = event.target;
-    const submitBtn = form.querySelector('button[type="submit"]');
+function handleContactForm(e) {
+    e.preventDefault();
     
-    const formData = new FormData(form);
-    const formObject = {};
-    formData.forEach((value, key) => formObject[key] = value);
-    
-    // Validate form
-    if (!validateContactForm(formObject)) {
-        return; // Validation failed
+    // Prevent double submission globally
+    if (isSubmitting) {
+        console.log('Form submission already in progress');
+        return;
     }
-
+    
+    // Prevent double submission
+    const submitBtn = e.target.querySelector('.submit-btn');
+    if (submitBtn.disabled) {
+        return;
+    }
+    
+    const formData = new FormData(e.target);
+    const formObject = {};
+    
+    // Convert FormData to object
+    for (let [key, value] of formData.entries()) {
+        formObject[key] = value;
+    }
+    
     // Check for recent submissions
     if (checkRecentSubmission('contact', formObject.email, formObject.phone)) {
         showNotification('duplicate', 'warning');
         return;
     }
     
-    // Set submitting flag
-    isSubmitting = true;
-    if (submitBtn) {
+    // Validate form data
+    if (validateContactForm(formObject)) {
+        // Set global submission flag
+        isSubmitting = true;
+        
+        // Disable submit button to prevent double submission
         submitBtn.disabled = true;
         submitBtn.textContent = 'Sending...';
+        
+        // Send to Google Sheets
+        sendToGoogleSheets(formObject, 'contact');
+        
+        // Re-enable button after a delay
+        setTimeout(() => {
+            submitBtn.disabled = false;
+            submitBtn.textContent = 'Send Message';
+            isSubmitting = false;
+        }, 5000);
     }
-    
-    // Send to Google Sheets
-    sendToGoogleSheets(formObject, 'contact', form, submitBtn, 'Send Message');
 }
 
 // Validate quote form data
 function validateQuoteForm(data) {
-    // Updated keys to match payload
-    const requiredFields = ['name', 'phone', 'email', 'product_type', 'description', 'weight', 'pickup_location', 'drop_location', 'service_type'];
+    const requiredFields = ['name', 'phone', 'email', 'productType', 'description', 'weight', 'pickupLocation', 'dropLocation', 'service'];
     
     for (let field of requiredFields) {
         if (!data[field] || data[field].trim() === '') {
-            showNotification(`Please fill in the ${field.replace(/_/g, ' ')} field.`, 'error');
+            showNotification(`Please fill in the ${field.replace(/([A-Z])/g, ' $1').toLowerCase()} field.`, 'error');
             return false;
         }
     }
@@ -253,8 +297,8 @@ function validateQuoteForm(data) {
         return false;
     }
     
-    // Validate phone number (basic validation for 10 digits)
-    const phoneRegex = /^\d{10}$/;
+    // Validate phone number (basic validation for Indian numbers)
+    const phoneRegex = /^[6-9]\d{9}$/;
     if (!phoneRegex.test(data.phone.replace(/\D/g, ''))) {
         showNotification('Please enter a valid 10-digit phone number.', 'error');
         return false;
@@ -276,7 +320,7 @@ function validateContactForm(data) {
     
     for (let field of requiredFields) {
         if (!data[field] || data[field].trim() === '') {
-            showNotification(`Please fill in the ${field.replace(/_/g, ' ')} field.`, 'error');
+            showNotification(`Please fill in the ${field.replace(/([A-Z])/g, ' $1').toLowerCase()} field.`, 'error');
             return false;
         }
     }
@@ -288,8 +332,8 @@ function validateContactForm(data) {
         return false;
     }
     
-    // Validate phone number (basic validation for 10 digits)
-    const phoneRegex = /^\d{10}$/;
+    // Validate phone number
+    const phoneRegex = /^[6-9]\d{9}$/;
     if (!phoneRegex.test(data.phone.replace(/\D/g, ''))) {
         showNotification('Please enter a valid 10-digit phone number.', 'error');
         return false;
@@ -301,17 +345,12 @@ function validateContactForm(data) {
 // Show notification messages
 function showNotification(message, type = 'info') {
     // Use translated messages if available
-    const messages = {
-        'submitting': 'Submitting form, please wait...',
-        'quoteSuccess': 'Quote request submitted! We will contact you soon.',
-        'contactSuccess': 'Message sent! We will get back to you soon.',
-        'duplicate': 'You just submitted this form. Please wait a few minutes.',
-        'error': 'An error occurred. Please try again later.'
-    };
-    message = messages[message] || message;
-
+    if (window.translationMessages && window.translationMessages[message]) {
+        message = window.translationMessages[message];
+    }
     // Remove existing notifications
-    document.querySelectorAll('.notification').forEach(n => n.remove());
+    const existingNotifications = document.querySelectorAll('.notification');
+    existingNotifications.forEach(notification => notification.remove());
     
     // Create notification element
     const notification = document.createElement('div');
@@ -323,12 +362,29 @@ function showNotification(message, type = 'info') {
         </div>
     `;
     
+    // Add styles
+    notification.style.cssText = `
+        position: fixed;
+        top: 20px;
+        right: 20px;
+        background: ${type === 'success' ? '#4CAF50' : type === 'error' ? '#f44336' : '#2196F3'};
+        color: white;
+        padding: 15px 20px;
+        border-radius: 5px;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+        z-index: 10000;
+        max-width: 400px;
+        animation: slideIn 0.3s ease-out;
+    `;
+    
     // Add to page
     document.body.appendChild(notification);
     
     // Auto remove after 5 seconds
     setTimeout(() => {
-        notification.remove();
+        if (notification.parentElement) {
+            notification.remove();
+        }
     }, 5000);
 }
 
@@ -386,7 +442,7 @@ function addMobileMenu() {
 
 // Service selector functionality
 function handleServiceSelection() {
-    const serviceSelect = document.getElementById('services'); // Assuming an ID on a select element
+    const serviceSelect = document.getElementById('services');
     if (serviceSelect) {
         serviceSelect.addEventListener('change', function() {
             const selectedValue = this.value;
@@ -400,15 +456,14 @@ function handleServiceSelection() {
 
 // Pre-fill service selection on quote page
 function prefillServiceSelection() {
-    // Corrected selector to match the one in Quote.html
-    const serviceSelect = document.querySelector('select[name="service_type"]'); 
+    const serviceSelect = document.querySelector('select[name="service"]');
     const storedService = localStorage.getItem('selectedService');
     
     if (serviceSelect && storedService) {
-        // Find the option with matching text or value
+        // Find the option with matching text
         const options = serviceSelect.options;
         for (let i = 0; i < options.length; i++) {
-            if (options[i].text === storedService || options[i].value === storedService) {
+            if (options[i].text === storedService) {
                 serviceSelect.selectedIndex = i;
                 break;
             }
@@ -420,7 +475,7 @@ function prefillServiceSelection() {
 
 // Add loading animation for forms
 function addLoadingState(form, isLoading) {
-    const submitBtn = form.querySelector('button[type="submit"]');
+    const submitBtn = form.querySelector('.submit-btn');
     if (submitBtn) {
         if (isLoading) {
             submitBtn.disabled = true;
@@ -438,30 +493,22 @@ function addLoadingState(form, isLoading) {
 const animationStyles = document.createElement('style');
 animationStyles.textContent = `
     @keyframes slideIn {
-        from { transform: translateX(100%); opacity: 0; }
-        to { transform: translateX(0); opacity: 1; }
+        from {
+            transform: translateX(100%);
+            opacity: 0;
+        }
+        to {
+            transform: translateX(0);
+            opacity: 1;
+        }
     }
-    .notification {
-        position: fixed;
-        top: 20px;
-        right: 20px;
-        color: white;
-        padding: 15px 20px;
-        border-radius: 5px;
-        box-shadow: 0 4px 12px rgba(0,0,0,0.15);
-        z-index: 10000;
-        max-width: 400px;
-        animation: slideIn 0.3s ease-out;
-    }
-    .notification-success { background: #4CAF50; }
-    .notification-error { background: #f44336; }
-    .notification-warning { background: #ff9800; }
-    .notification-info { background: #2196F3; }
+    
     .notification-content {
         display: flex;
         justify-content: space-between;
         align-items: center;
     }
+    
     .notification-close {
         background: none;
         border: none;
@@ -470,10 +517,60 @@ animationStyles.textContent = `
         cursor: pointer;
         margin-left: 10px;
     }
-    .notification-close:hover { opacity: 0.8; }
+    
+    .notification-close:hover {
+        opacity: 0.8;
+    }
 `;
 document.head.appendChild(animationStyles);
 
+// Add scroll to top functionality
+function addScrollToTop() {
+    // Create scroll to top button
+    const scrollBtn = document.createElement('div');
+    scrollBtn.className = 'back-to-top';
+    scrollBtn.innerHTML = '↑';
+    scrollBtn.style.cssText = `
+        position: fixed;
+        bottom: 30px;
+        right: 30px;
+        background: #2196F3;
+        color: white;
+        padding: 10px 15px;
+        border-radius: 50%;
+        cursor: pointer;
+        font-size: 18px;
+        display: none;
+        align-items: center;
+        justify-content: center;
+        box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+        z-index: 10000;
+        transition: opacity 0.3s ease, visibility 0.3s ease;
+        opacity: 0;
+        visibility: hidden;
+    `;
+    
+    document.body.appendChild(scrollBtn);
+    
+    // Show/hide scroll button
+    window.addEventListener('scroll', function() {
+        if (window.pageYOffset > 300) {
+            scrollBtn.style.opacity = '1';
+            scrollBtn.style.visibility = 'visible';
+        } else {
+            scrollBtn.style.opacity = '0';
+            scrollBtn.style.visibility = 'hidden';
+        }
+    });
+    
+    // Scroll to top on click
+    scrollBtn.addEventListener('click', function() {
+        window.scrollTo({
+            top: 0,
+            behavior: 'smooth'
+        });
+    });
+}
 
 // Add form field validation on blur
 function addFieldValidation() {
@@ -517,7 +614,7 @@ function validateField(field) {
     
     // Phone validation
     if (name === 'phone' && value) {
-        const phoneRegex = /^\d{10}$/;
+        const phoneRegex = /^[6-9]\d{9}$/;
         if (!phoneRegex.test(value.replace(/\D/g, ''))) {
             field.classList.add('error');
             return false;
@@ -573,63 +670,138 @@ function checkRecentSubmission(formType, email, phone) {
 }
 
 // Google Sheets Integration
-function sendToGoogleSheets(data, formType, formElement, submitButton, buttonText) {
+function sendToGoogleSheets(data, formType) {
     // Replace this URL with your Google Apps Script web app URL
     const GOOGLE_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbxyNvi0k0OtkTJeW38WXCGufiuyHUYdj4FqQzpa5ZlsIuJNz19P4Gvf69-OZ9OuH8Bx/exec';
     
+    // Add form type to data
     data.formType = formType;
-    data.submissionTimestamp = new Date().toISOString();
     
+    // Add unique timestamp to prevent duplicate submissions
+    data.submissionTimestamp = Date.now();
+    
+    // Show loading state
     showNotification('submitting', 'info');
     
-    // Store submission attempt in localStorage
-    const submissionKey = `${formType}_${data.email}_${data.phone}_${Date.now()}`;
+    // Store submission attempt in localStorage to prevent duplicates
+    const submissionKey = `${formType}_${data.email}_${data.phone}_${data.submissionTimestamp}`;
     localStorage.setItem(submissionKey, 'submitted');
     
     fetch(GOOGLE_SCRIPT_URL, {
         method: 'POST',
-        mode: 'no-cors', // Correct mode for cross-origin Google Script
+        mode: 'no-cors', // Important for Google Apps Script
         headers: {
             'Content-Type': 'application/json',
         },
         body: JSON.stringify(data)
     })
-    .then(() => {
+    .then(response => {
         // Since we're using no-cors, we can't read the response
-        // Assume success if no error is thrown
+        // But we can assume success if no error is thrown
         showNotification(
-            formType === 'quote' ? 'quoteSuccess' : 'contactSuccess',
+            formType === 'quote' 
+                ? 'quoteSuccess' 
+                : 'contactSuccess',
             'success'
         );
-        if (formElement) formElement.reset();
+        
+        // Reset form
+        const form = document.querySelector(formType === 'quote' ? '#quoteForm' : '#contactForm');
+        if (form) {
+            form.reset();
+            
+            // Re-enable submit button immediately after successful submission
+            const submitBtn = form.querySelector('.submit-btn');
+            if (submitBtn) {
+                submitBtn.disabled = false;
+                submitBtn.textContent = formType === 'quote' ? 'Get A Quote' : 'Send Message';
+            }
+        }
+        
+        // Reset global submission flag
+        isSubmitting = false;
+        
+        // Clean up localStorage after successful submission
+        setTimeout(() => {
+            localStorage.removeItem(submissionKey);
+        }, 60000); // Remove after 1 minute
     })
     .catch(error => {
         console.error('Error submitting form:', error);
         showNotification('error', 'error');
-        // Clean up localStorage on error
-        localStorage.removeItem(submissionKey);
-    })
-    .finally(() => {
-        // Re-enable button and reset text
-        if (submitButton) {
-            submitButton.disabled = false;
-            submitButton.textContent = buttonText;
+        
+        // Re-enable submit button on error
+        const form = document.querySelector(formType === 'quote' ? '#quoteForm' : '#contactForm');
+        if (form) {
+            const submitBtn = form.querySelector('.submit-btn');
+            if (submitBtn) {
+                submitBtn.disabled = false;
+                submitBtn.textContent = formType === 'quote' ? 'Get A Quote' : 'Send Message';
+            }
         }
+        
+        // Reset global submission flag
         isSubmitting = false;
         
-        // Clean up localStorage after 5 minutes
-        setTimeout(() => {
-            localStorage.removeItem(submissionKey);
-        }, 300000); // 5 minutes
+        // Clean up localStorage on error
+        localStorage.removeItem(submissionKey);
     });
+}
+
+// Alternative method using Google Forms (if Apps Script doesn't work)
+function sendToGoogleForms(data, formType) {
+    // Google Forms URLs (you'll need to create these forms)
+    const GOOGLE_FORMS = {
+        quote: 'YOUR_QUOTE_FORM_URL_HERE',
+        contact: 'YOUR_CONTACT_FORM_URL_HERE'
+    };
+    
+    const formUrl = GOOGLE_FORMS[formType];
+    if (!formUrl) {
+        showNotification('Form configuration error. Please contact support.', 'error');
+        return;
+    }
+    
+    // Create a hidden form to submit to Google Forms
+    const hiddenForm = document.createElement('form');
+    hiddenForm.method = 'POST';
+    hiddenForm.action = formUrl;
+    hiddenForm.target = '_blank';
+    hiddenForm.style.display = 'none';
+    
+    // Add form fields
+    Object.keys(data).forEach(key => {
+        const input = document.createElement('input');
+        input.type = 'hidden';
+        input.name = key;
+        input.value = data[key];
+        hiddenForm.appendChild(input);
+    });
+    
+    // Submit the form
+    document.body.appendChild(hiddenForm);
+    hiddenForm.submit();
+    document.body.removeChild(hiddenForm);
+    
+    showNotification(
+        formType === 'quote' 
+            ? 'Quote request submitted successfully! We will contact you soon.' 
+            : 'Message sent successfully! We will get back to you soon.',
+        'success'
+    );
+    
+    // Reset original form
+    const form = document.querySelector(formType === 'quote' ? '#quoteForm' : '#contactForm');
+    if (form) {
+        form.reset();
+    }
 }
 
 // Back to top functionality
 window.addEventListener('scroll', function() {
     const backToTop = document.querySelector('.back-to-top');
-    if (backToTop) { // Check if the button exists
+    if (backToTop) { // Check if element exists
         if (window.pageYOffset > 300) {
-            // Use opacity and visibility for smoother show/hide
             backToTop.style.opacity = '1';
             backToTop.style.visibility = 'visible';
         } else {
@@ -646,19 +818,38 @@ function scrollToTop() {
     });
 }
 
-// === MAIN INITIALIZATION ===
-// This single listener replaces all the duplicate ones.
+// CONSOLIDATED AND FINAL DOMContentLoaded BLOCK
 document.addEventListener('DOMContentLoaded', function() {
-    initScrollAnimations();
-    initParallaxEffect();
-    initHeroAnimations();
-    initCounters();
-    addSmoothScrolling();
+    // Initialize forms
     initializeForms();
+    
+    // Add smooth scrolling for navigation links
+    addSmoothScrolling();
+    
+    // Add mobile menu functionality
     addMobileMenu();
+    
+    // Initialize scroll animations (General fade/slide in effects)
+    initScrollAnimations();
+    
+    // Initialize counters (Intersection Observer ensures they start on screen)
+    initCounters();
+    
+    // Initialize parallax effect
+    initParallaxEffect();
+    
+    // Initialize hero animations
+    initHeroAnimations();
+    
+    // Initialize scroll to top
+    addScrollToTop();
+    
+    // Initialize field validation
+    addFieldValidation();
+    
+    // Initialize service selection
     handleServiceSelection();
     prefillServiceSelection();
-    addFieldValidation();
-
+    
     console.log('All India Transport JavaScript loaded successfully!');
 });
