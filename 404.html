@@ -439,6 +439,186 @@ textarea.form-input{resize:vertical;min-height:120px}
   .form-row-2{grid-template-columns:1fr}
   .hero-actions{flex-direction:column;align-items:flex-start}
 }
+
+/* ═══════════════════════════════════════════════
+   MOBILE FIX — max-width: 768px
+   Fixes half-page blank, overflowing content,
+   broken grids, and oversized elements on phones.
+   ═══════════════════════════════════════════════ */
+@media (max-width: 768px) {
+
+  /* ── GLOBAL: Stop horizontal overflow ── */
+  html, body {
+    overflow-x: hidden !important;
+    max-width: 100vw !important;
+  }
+
+  /* ── GLOBAL: Responsive images ── */
+  img {
+    max-width: 100% !important;
+    height: auto !important;
+  }
+
+  /* ── SECTION PADDING: Desktop had 100px 56px ── */
+  .section, .section-sm,
+  .hiw-section, .why-section,
+  .testimonials, .cta-band,
+  .cities-section, .footer,
+  .partner-band {
+    padding-left: 16px !important;
+    padding-right: 16px !important;
+    padding-top: 56px !important;
+    padding-bottom: 56px !important;
+  }
+
+  /* ── TOPBAR: Hide on mobile to save space ── */
+  .topbar {
+    display: none !important;
+  }
+
+  /* ── NAVBAR: Reduce padding ── */
+  .navbar {
+    padding-left: 16px !important;
+    padding-right: 16px !important;
+    height: 60px !important;
+  }
+
+  /* ── HERO: Stack vertically, was side-by-side flex ── */
+  .hero-content {
+    flex-direction: column !important;
+    padding: 40px 16px 80px !important;
+    gap: 32px !important;
+    align-items: flex-start !important;
+  }
+
+  .hero-visual {
+    width: 100% !important;
+    max-width: 320px !important;
+    margin: 0 auto !important;
+  }
+
+  .hero-title {
+    font-size: clamp(42px, 12vw, 64px) !important;
+  }
+
+  .hero-subtitle {
+    font-size: 15px !important;
+  }
+
+  .hero-trust {
+    gap: 16px !important;
+  }
+
+  /* ── STATS BAR: 2 columns on mobile ── */
+  .stats-bar {
+    grid-template-columns: repeat(2, 1fr) !important;
+  }
+
+  /* ── GRIDS: All multi-column → single column ── */
+  .card-grid-2,
+  .card-grid-3,
+  .card-grid-4,
+  .hiw-grid,
+  .why-inner,
+  .testi-grid,
+  .footer-grid,
+  .about-split,
+  .team-grid,
+  .mission-grid,
+  .contact-layout,
+  .hours-grid,
+  .partner-band,
+  .quote-layout,
+  .why-quote-grid,
+  .svc-hero-grid,
+  .svc-full-grid,
+  .social-big {
+    grid-template-columns: 1fr !important;
+    gap: 20px !important;
+  }
+
+  /* ── HIW: Hide connector arrows between steps ── */
+  .hiw-connector {
+    display: none !important;
+  }
+
+  /* ── WHY MAP: Limit height on mobile ── */
+  .why-map-wrap {
+    padding: 20px !important;
+  }
+  .why-map-svg {
+    max-width: 280px !important;
+  }
+
+  /* ── FOOTER ── */
+  .footer {
+    padding-top: 40px !important;
+    padding-bottom: 20px !important;
+  }
+
+  /* ── PAGE HERO (inner pages) ── */
+  .page-hero {
+    padding: 48px 16px 64px !important;
+  }
+  .page-hero h1 {
+    font-size: clamp(36px, 10vw, 56px) !important;
+  }
+  .page-hero p {
+    font-size: 15px !important;
+  }
+
+  /* ── SECTION TITLES ── */
+  .sec-title {
+    font-size: clamp(32px, 9vw, 52px) !important;
+  }
+  .sec-subtitle {
+    font-size: 15px !important;
+    margin-bottom: 32px !important;
+  }
+
+  /* ── FORMS ── */
+  .form-row-2 {
+    grid-template-columns: 1fr !important;
+  }
+
+  /* ── CTA BAND ── */
+  .cta-band h2 {
+    font-size: clamp(32px, 9vw, 52px) !important;
+  }
+  .cta-band p {
+    font-size: 15px !important;
+  }
+  .cta-band-actions {
+    flex-direction: column !important;
+    align-items: center !important;
+  }
+
+  /* ── BUTTONS ── */
+  .btn {
+    width: 100% !important;
+    justify-content: center !important;
+  }
+
+  /* ── HERO ACTIONS ── */
+  .hero-actions {
+    flex-direction: column !important;
+    align-items: stretch !important;
+    gap: 12px !important;
+    width: 100% !important;
+  }
+
+  /* ── CARDS: Reduce padding ── */
+  .svc-card, .why-card, .testi-card, .hiw-step {
+    padding: 24px 20px !important;
+  }
+
+  /* ── MARQUEE: Slightly smaller text ── */
+  .marquee-item {
+    font-size: 11px !important;
+    padding: 0 20px !important;
+  }
+
+}
 </style>
 
 <!-- SEO Meta Tags -->
