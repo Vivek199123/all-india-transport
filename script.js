@@ -127,3 +127,128 @@ if (typeof gtag !== 'undefined') {
     page_location: window.location.href
   });
 }
+
+// ─────────────────────────────────────────────
+// MOBILE IMAGE FIX
+// Prevents images from overflowing the viewport
+// on small screens. Works on all images including
+// those loaded dynamically after page load.
+// ─────────────────────────────────────────────
+(function () {
+  const MOBILE_BREAKPOINT = 768;
+
+  // Inject a <style> block so the fix applies even
+  // before JS finishes running (render-safe).
+  function injectResponsiveImageStyles() {
+    const style = document.createElement('style');
+    style.id = 'ait-mobile-img-fix';
+    style.textContent = `
+      @media (max-width: ${MOBILE_BREAKPOINT}px) {
+        img {
+          max-width: 100% !important;
+          height: auto !important;
+          display: block;
+        }
+
+        /* Prevent fixed-width inline styles from
+           overriding responsive behaviour */
+        img[width], img[style*="width"] {
+          width: 100% !important;
+          max-width: 100% !important;
+          height: auto !important;
+        }
+
+        /* Stop parent containers clipping or
+           causing horizontal scroll */
+        figure, picture, .img-wrap,
+        .image-wrapper, .thumb, .thumbnail,
+        [class*="gallery"], [class*="banner"],
+        [class*="hero"], [class*="slider"],
+        [class*="carousel"] {
+          max-width: 100% !important;
+          overflow: hidden !important;
+        }
+      }
+    `;
+    document.head.appendChild(style);
+  }
+
+  // Also strip oversized inline width/height
+  // attributes at runtime (belt-and-suspenders).
+  function fixImageAttributes(root) {
+    if (window.innerWidth > MOBILE_BREAKPOINT) return;
+
+    root.querySelectorAll('img').forEach(img => {
+      const naturalW = img.naturalWidth || 0;
+      const viewportW = window.innerWidth;
+
+      // Remove hard-coded width attributes wider than viewport
+      if (img.hasAttribute('width')) {
+        const attrW = parseInt(img.getAttribute('width'), 10);
+        if (attrW > viewportW) {
+          img.removeAttribute('width');
+          img.removeAttribute('height'); // keep aspect ratio
+        }
+      }
+
+      // Strip inline styles that force a fixed width
+      if (img.style.width && parseInt(img.style.width, 10) > viewportW) {
+        img.style.width = '100%';
+        img.style.height = 'auto';
+      }
+
+      // Mark oversized natural-width images
+      if (naturalW > viewportW) {
+        img.style.maxWidth = '100%';
+        img.style.height = 'auto';
+      }
+    });
+  }
+
+  // Watch for dynamically added images (e.g. sliders,
+  // lazy loaders, JS-rendered sections).
+  function observeDynamicImages() {
+    if (!window.MutationObserver) return;
+
+    const mo = new MutationObserver(mutations => {
+      mutations.forEach(mutation => {
+        mutation.addedNodes.forEach(node => {
+          if (node.nodeType !== 1) return; // elements only
+          if (node.tagName === 'IMG') {
+            fixImageAttributes(node.parentElement || document.body);
+          } else if (node.querySelectorAll) {
+            fixImageAttributes(node);
+          }
+        });
+      });
+    });
+
+    mo.observe(document.body, { childList: true, subtree: true });
+  }
+
+  // Run order: styles first (sync), then attribute
+  // fixes after DOM + images are available.
+  injectResponsiveImageStyles();
+
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', () => {
+      fixImageAttributes(document);
+      observeDynamicImages();
+    });
+  } else {
+    fixImageAttributes(document);
+    observeDynamicImages();
+  }
+
+  // Re-run on orientation change (portrait ↔ landscape)
+  window.addEventListener('orientationchange', () => {
+    setTimeout(() => fixImageAttributes(document), 300);
+  });
+
+  // Re-run on resize in case user resizes a browser window
+  let resizeTimer;
+  window.addEventListener('resize', () => {
+    clearTimeout(resizeTimer);
+    resizeTimer = setTimeout(() => fixImageAttributes(document), 200);
+  });
+})();
