@@ -1980,7 +1980,6 @@ if(!canvas) return;
 const ctx = canvas.getContext('2d');
 let W,H,dpr;
 const P={saffron:'#F7931E',saffronL:'#FFA940',green:'#2E7D32',greenL:'#388E3C',navy:'#1C4F72',navyD:'#0D3550'};
-const TRUCK_COLORS=[P.green,P.greenL,'#1d4020','#2d5016',P.navy];
 
 function resize(){
   dpr=window.devicePixelRatio||1;
@@ -2105,99 +2104,24 @@ function drawTrees(){
   });
 }
 
-// Trucks
-let trucks=[];
-function spawnTruck(instant){
-  // Lane 0 approaches the viewer; lane 1 travels away toward the horizon.
-  const lane=Math.random()<.5?0:1;
-  const col=TRUCK_COLORS[Math.floor(Math.random()*TRUCK_COLORS.length)];
-  const speed=lane===0?(0.16+Math.random()*.1):(0.08+Math.random()*.06);
-  const t=instant?Math.random()*.85:(lane===0?0.02:1.05);
-  trucks.push({t,speed:lane===0?speed:-speed,lane,col,alpha:.92});
-}
-function drawTruckPerspective(truck){
-  const {t,lane,col,alpha}=truck;
-  const hy=H*HORIZ,vpx=W*.5,bw=W*.45;
-  const y=hy+t*(H-hy);
-  const sc=0.1+t*.9;
-  const laneOff=bw*t*(lane===0?.35:-.35);
-  const cx=vpx+laneOff;
-  const approaching=lane===0;
-  const fade=Math.min(1,t*7)*Math.min(1,(1-t)*5+.15);
-  if(fade<=0)return;
-
-  ctx.save();
-  ctx.globalAlpha=alpha*fade;
-  ctx.translate(cx,y);
-  ctx.scale(sc,sc);
-
-  // Ground shadow keeps the vehicle visually attached to the road.
-  ctx.fillStyle='rgba(0,0,0,.32)';
-  ctx.beginPath();ctx.ellipse(0,3,34,7,0,0,Math.PI*2);ctx.fill();
-
-  if(approaching){
-    // Front-facing Indian goods truck: cargo body behind the cab.
-    ctx.fillStyle=col;
-    ctx.beginPath();ctx.roundRect(-31,-73,62,48,4);ctx.fill();
-    ctx.strokeStyle='rgba(0,0,0,.25)';ctx.lineWidth=1.5;
-    for(let x=-20;x<=20;x+=20){ctx.beginPath();ctx.moveTo(x,-69);ctx.lineTo(x,-30);ctx.stroke();}
-
-    ctx.fillStyle='#1a2530';
-    ctx.beginPath();ctx.roundRect(-29,-43,58,43,[7,7,3,3]);ctx.fill();
-    ctx.fillStyle='rgba(100,200,255,.36)';
-    ctx.beginPath();ctx.roundRect(-23,-38,46,18,3);ctx.fill();
-    ctx.strokeStyle='rgba(145,220,255,.45)';ctx.stroke();
-
-    ctx.fillStyle=P.saffron;ctx.fillRect(-29,-15,58,5);
-    ctx.fillStyle='#fff9c4';ctx.shadowColor='#ffee58';ctx.shadowBlur=10;
-    ctx.fillRect(-24,-12,8,6);ctx.fillRect(16,-12,8,6);ctx.shadowBlur=0;
-    ctx.fillStyle='rgba(255,255,255,.9)';ctx.font="bold 10px 'Barlow Condensed',sans-serif";
-    ctx.textAlign='center';ctx.fillText('AIT',0,-3);
-  }else{
-    // Rear-facing cargo truck moving toward the horizon.
-    ctx.fillStyle=col;
-    ctx.beginPath();ctx.roundRect(-31,-68,62,61,4);ctx.fill();
-    ctx.strokeStyle='rgba(255,255,255,.28)';ctx.lineWidth=1.4;
-    ctx.strokeRect(-25,-62,50,45);
-    ctx.beginPath();ctx.moveTo(0,-62);ctx.lineTo(0,-17);ctx.stroke();
-    ctx.fillStyle='rgba(255,255,255,.9)';ctx.font="bold 10px 'Barlow Condensed',sans-serif";
-    ctx.textAlign='center';ctx.fillText('AIT',0,-38);
-    ctx.fillStyle='#d32f2f';ctx.shadowColor='#ff5252';ctx.shadowBlur=8;
-    ctx.fillRect(-25,-13,7,6);ctx.fillRect(18,-13,7,6);ctx.shadowBlur=0;
-    ctx.fillStyle=P.saffron;ctx.fillRect(-31,-7,62,4);
-  }
-
-  // Wheels are shown symmetrically in a front/rear perspective view.
-  [-24,24].forEach(wx=>{
-    ctx.fillStyle='#0a0a0a';ctx.beginPath();ctx.arc(wx,0,8,0,Math.PI*2);ctx.fill();
-    ctx.strokeStyle='#777';ctx.lineWidth=1.3;ctx.beginPath();ctx.arc(wx,0,4.5,0,Math.PI*2);ctx.stroke();
-  });
-  ctx.restore();
-}
-
-let lastSpawn=0,raf,ts0=null;
+// The road scene intentionally contains no animated vehicles.
+let raf,ts0=null;
 function frame(ts){
   if(!ts0)ts0=ts;
   const t=(ts-ts0)/1000;
   dashOff=(dashOff+.2)%1;
-  if(ts-lastSpawn>1800+Math.random()*2200){spawnTruck(false);lastSpawn=ts;}
   ctx.clearRect(0,0,W,H);
   // sky
   const sg=ctx.createLinearGradient(0,0,0,H*HORIZ);
   sg.addColorStop(0,'#060d1a');sg.addColorStop(.5,'#09162a');sg.addColorStop(1,'#102035');
   ctx.fillStyle=sg;ctx.fillRect(0,0,W,H*HORIZ);
   drawStars(t);drawMoon();drawHills();drawRoad();drawTrees();
-  const near=trucks.filter(tr=>tr.lane===0).sort((a,b)=>a.t-b.t);
-  const far=trucks.filter(tr=>tr.lane===1).sort((a,b)=>b.t-a.t);
-  [...far,...near].forEach(tr=>{drawTruckPerspective(tr);tr.t+=tr.speed*.014;});
-  trucks=trucks.filter(tr=>tr.t>-.1&&tr.t<1.15);
   raf=requestAnimationFrame(frame);
 }
 
 function init(){
-  resize();initTrees();trucks=[];
-  for(let i=0;i<7;i++)spawnTruck(true);
-  lastSpawn=0;ts0=null;
+  resize();initTrees();
+  ts0=null;
   if(raf)cancelAnimationFrame(raf);
   raf=requestAnimationFrame(frame);
 }
@@ -2231,4 +2155,5 @@ init();
 <script src="assets/seo-phase.js" defer></script>
 </body>
 </html>
+
 
